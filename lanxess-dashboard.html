@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LANXESS LinkedIn Performance Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    
+    :root {
+      --color-background-primary: #FFFFFF;
+      --color-background-secondary: #F5F5F5;
+      --color-background-tertiary: #FAFAFA;
+      --color-text-primary: #1A1A1A;
+      --color-text-secondary: #666666;
+      --color-text-tertiary: #999999;
+      --color-text-info: #0C447C;
+      --color-border-tertiary: #E5E5E5;
+      --color-border-secondary: #D0D0D0;
+      --color-border-info: #378ADD;
+      --color-background-info: #E6F1FB;
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background-primary: #1A1A1A;
+        --color-background-secondary: #2A2A2A;
+        --color-background-tertiary: #0F0F0F;
+        --color-text-primary: #FFFFFF;
+        --color-text-secondary: #CCCCCC;
+        --color-text-tertiary: #999999;
+        --color-border-tertiary: #333333;
+        --color-border-secondary: #444444;
+        --color-background-info: #0C447C;
+      }
+    }
+    
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-background-tertiary);
+      color: var(--color-text-primary);
+    }
+    
+    .container {
+      display: flex;
+      height: 100vh;
+      background: var(--color-background-tertiary);
+    }
+    
+    .dashboard {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 0.5px solid var(--color-border-tertiary);
+    }
+    
+    .chat-panel {
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      background: var(--color-background-primary);
+      border-left: 0.5px solid var(--color-border-tertiary);
+    }
+    
+    .header {
+      padding: 20px 24px;
+      background: var(--color-background-primary);
+      border-bottom: 0.5px solid var(--color-border-tertiary);
+    }
+    
+    .header h2 {
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      margin: 0 0 16px 0;
+    }
+    
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .nav-tab {
+      padding: 8px 16px;
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-primary);
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      transition: all 0.2s;
+    }
+    
+    .nav-tab:hover {
+      border-color: var(--color-border-secondary);
+      background: var(--color-background-secondary);
+    }
+    
+    .nav-tab.active {
+      background: var(--color-background-info);
+      color: var(--color-text-info);
+      border-color: var(--color-border-info);
+      font-weight: 500;
+    }
+    
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    
+    .management-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    
+    .kpi-card-large {
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg);
+      padding: 16px;
+      text-align: center;
+    }
+    
+    .kpi-label {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    
+    .kpi-value-large {
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      margin-bottom: 3px;
+    }
+    
+    .comparison-table {
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg);
+      padding: 16px;
+    }
+    
+    .table-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      margin-bottom: 12px;
+    }
+    
+    .table-row {
+      display: grid;
+      grid-template-columns: 100px repeat(5, 1fr);
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 0.5px solid var(--color-border-tertiary);
+      font-size: 11px;
+    }
+    
+    .table-row.header {
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      border-bottom: 1px solid var(--color-border-secondary);
+      margin-bottom: 6px;
+    }
+    
+    .table-cell {
+      text-align: right;
+    }
+    
+    .table-cell.name {
+      text-align: left;
+      font-weight: 500;
+      color: var(--color-text-primary);
+    }
+    
+    .chat-header {
+      padding: 14px 16px;
+      background: var(--color-background-secondary);
+      border-bottom: 0.5px solid var(--color-border-tertiary);
+    }
+    
+    .chat-header h3 {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      margin: 0;
+    }
+    
+    .chat-header p {
+      font-size: 10px;
+      color: var(--color-text-secondary);
+      margin: 3px 0 0 0;
+    }
+    
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .message {
+      display: flex;
+      gap: 6px;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.user {
+      justify-content: flex-end;
+    }
+    
+    .message-bubble {
+      max-width: 90%;
+      padding: 8px 11px;
+      border-radius: var(--border-radius-md);
+      font-size: 12px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    
+    .message.user .message-bubble {
+      background: var(--color-background-info);
+      color: var(--color-text-info);
+    }
+    
+    .message.assistant .message-bubble {
+      background: var(--color-background-secondary);
+      color: var(--color-text-primary);
+      border: 0.5px solid var(--color-border-tertiary);
+    }
+    
+    .suggested-questions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding: 0;
+      margin-top: 8px;
+    }
+    
+    .suggested-btn {
+      padding: 6px 10px;
+      background: var(--color-background-secondary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--color-text-primary);
+      text-align: left;
+      transition: all 0.2s;
+    }
+    
+    .suggested-btn:hover {
+      background: var(--color-background-tertiary);
+      border-color: var(--color-border-secondary);
+    }
+    
+    .chat-input-area {
+      padding: 10px;
+      border-top: 0.5px solid var(--color-border-tertiary);
+      display: flex;
+      gap: 6px;
+    }
+    
+    .chat-input-area input {
+      flex: 1;
+      padding: 8px 10px;
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      font-size: 12px;
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+    }
+    
+    .chat-input-area input:focus {
+      outline: none;
+      border-color: var(--color-border-secondary);
+    }
+    
+    .chat-input-area button {
+      padding: 8px 12px;
+      background: transparent;
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: var(--border-radius-md);
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--color-text-primary);
+    }
+    
+    .chat-input-area button:hover {
+      background: var(--color-background-secondary);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="dashboard">
+    <div class="header">
+      <h2>LANXESS LinkedIn Performance Dashboard</h2>
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showView('overview')">Management Overview</button>
+        <button class="nav-tab" onclick="showView('corporate')">Corporate</button>
+        <button class="nav-tab" onclick="showView('mpp')">MPP</button>
+      </div>
+    </div>
+    
+    <div class="content" id="content"></div>
+  </div>
+  
+  <div class="chat-panel">
+    <div class="chat-header">
+      <h3>Kampagnen-Assistant</h3>
+      <p>Fragen zu Daten und Budget</p>
+    </div>
+    
+    <div class="chat-messages" id="chatMessages"></div>
+    
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="Deine Frage..." onkeypress="handleChatKeyPress(event)" />
+      <button onclick="sendChatMessage()">Go</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const campaigns = [
+  {
+    account_id: "508413102",
+    account_name: "Biosecurity Solutions @ capinio",
+    bu: "MPP",
+    businessLine: "Consumer Solutions",
+    campaign: "2026 | Biosecurity Solutions | Horse Webinar | Link Teams",
+    objective_type: "WEBSITE_VISIT",
+    impressions: 38486,
+    clicks: 133,
+    conversions: 0,
+    engagements: 253,
+    follows: 0,
+    ctr: 0.0035,
+    cpc: 1.0937,
+    spend: 145.4615
+  },
+  {
+    account_id: "508413102",
+    account_name: "Biosecurity Solutions @ capinio",
+    bu: "MPP",
+    businessLine: "Consumer Solutions",
+    campaign: "2026 | Biosecurity Solutions | Horse Webinar | Event",
+    objective_type: "WEBSITE_VISIT",
+    impressions: 18621,
+    clicks: 92,
+    conversions: 0,
+    engagements: 166,
+    follows: 0,
+    ctr: 0.0049,
+    cpc: 1.5916,
+    spend: 146.4311
+  },
+  {
+    account_id: "508413102",
+    account_name: "Biosecurity Solutions @ capinio",
+    bu: "MPP",
+    businessLine: "Consumer Solutions",
+    campaign: "260120 | Biosecurity Solutions - Mefisto | France | Engagement | Single Image Ads",
+    objective_type: "ENGAGEMENT",
+    impressions: 760,
+    clicks: 19,
+    conversions: 0,
+    engagements: 19,
+    follows: 0,
+    ctr: 0.025,
+    cpc: 0.1495,
+    spend: 2.84
+  },
+  {
+    account_id: "507703246",
+    account_name: "LANXESS @ capinio",
+    bu: "Corporate",
+    businessLine: "Corporate",
+    campaign: "2026 | Thought Leadership | RCH | Antonia Albers",
+    objective_type: "ENGAGEMENT",
+    impressions: 347,
+    clicks: 2,
+    conversions: 0,
+    engagements: 2,
+    follows: 0,
+    ctr: 0.0058,
+    cpc: 23.83,
+    spend: 47.66
+  },
+  {
+    account_id: "507703246",
+    account_name: "LANXESS @ capinio",
+    bu: "Corporate",
+    businessLine: "Corporate",
+    campaign: "2026 | Product Campaign | RCH | TireTech",
+    objective_type: "ENGAGEMENT",
+    impressions: 3172,
+    clicks: 74,
+    conversions: 0,
+    engagements: 75,
+    follows: 3,
+    ctr: 0.0233,
+    cpc: 0.6732,
+    spend: 49.82
+  },
+  {
+    account_id: "507703246",
+    account_name: "LANXESS @ capinio",
+    bu: "Corporate",
+    businessLine: "Corporate",
+    campaign: "2025 | Product Campaign | Video Views | Nutrition",
+    objective_type: "VIDEO_VIEW",
+    impressions: 72753,
+    clicks: 156,
+    conversions: 0,
+    engagements: 369,
+    follows: 0,
+    ctr: 0.0021,
+    cpc: 0.5881,
+    spend: 91.737
+  },
+  {
+    account_id: "507703246",
+    account_name: "LANXESS @ capinio",
+    bu: "Corporate",
+    businessLine: "Corporate",
+    campaign: "2025 | Product Campaign | Video Views | Climate Protection",
+    objective_type: "VIDEO_VIEW",
+    impressions: 276722,
+    clicks: 648,
+    conversions: 0,
+    engagements: 1818,
+    follows: 0,
+    ctr: 0.0023,
+    cpc: 0.2737,
+    spend: 177.39
+  }
+];
+
+function formatNumber(num) {
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return Math.round(num).toString();
+}
+
+function formatEuro(num) {
+  return '€' + num.toFixed(2);
+}
+
+function formatPercent(num) {
+  return (num * 100).toFixed(2) + '%';
+}
+
+function groupByBU() {
+  const grouped = {};
+  campaigns.forEach(camp => {
+    if (!grouped[camp.bu]) grouped[camp.bu] = [];
+    grouped[camp.bu].push(camp);
+  });
+  return grouped;
+}
+
+function groupByObjective(camps) {
+  const grouped = {};
+  camps.forEach(camp => {
+    if (!grouped[camp.objective_type]) grouped[camp.objective_type] = [];
+    grouped[camp.objective_type].push(camp);
+  });
+  return grouped;
+}
+
+function renderOverview() {
+  const totalImpressions = campaigns.reduce((s, c) => s + c.impressions, 0);
+  const totalClicks = campaigns.reduce((s, c) => s + c.clicks, 0);
+  const totalSpend = campaigns.reduce((s, c) => s + c.spend, 0);
+  const avgCTR = totalClicks / totalImpressions;
+  const avgCPC = totalClicks > 0 ? totalSpend / totalClicks : 0;
+  
+  const buStats = groupByBU();
+  const buTableRows = Object.keys(buStats).map(bu => {
+    const camps = buStats[bu];
+    const impr = camps.reduce((s, c) => s + c.impressions, 0);
+    const clks = camps.reduce((s, c) => s + c.clicks, 0);
+    const spend = camps.reduce((s, c) => s + c.spend, 0);
+    const ctr = clks / impr;
+    const cpc = clks > 0 ? spend / clks : 0;
+    
+    return `<div class="table-row">
+      <div class="table-cell name">${bu}</div>
+      <div class="table-cell">${formatNumber(impr)}</div>
+      <div class="table-cell">${formatNumber(clks)}</div>
+      <div class="table-cell">${formatPercent(ctr)}</div>
+      <div class="table-cell">${formatEuro(cpc)}</div>
+      <div class="table-cell">${formatEuro(spend)}</div>
+    </div>`;
+  }).join('');
+  
+  return `
+    <div class="management-grid">
+      <div class="kpi-card-large">
+        <div class="kpi-label">Total Impressions</div>
+        <div class="kpi-value-large">${formatNumber(totalImpressions)}</div>
+      </div>
+      <div class="kpi-card-large">
+        <div class="kpi-label">Total Clicks</div>
+        <div class="kpi-value-large">${formatNumber(totalClicks)}</div>
+      </div>
+      <div class="kpi-card-large">
+        <div class="kpi-label">Avg. CTR</div>
+        <div class="kpi-value-large">${formatPercent(avgCTR)}</div>
+      </div>
+      <div class="kpi-card-large">
+        <div class="kpi-label">Avg. CPC</div>
+        <div class="kpi-value-large">${formatEuro(avgCPC)}</div>
+      </div>
+      <div class="kpi-card-large">
+        <div class="kpi-label">Total Spend</div>
+        <div class="kpi-value-large">${formatEuro(totalSpend)}</div>
+      </div>
+      <div class="kpi-card-large">
+        <div class="kpi-label">Kampagnen</div>
+        <div class="kpi-value-large">${campaigns.length}</div>
+      </div>
+    </div>
+    
+    <div class="comparison-table">
+      <div class="table-title">Performance nach Geschäftsbereich</div>
+      <div class="table-row header">
+        <div class="table-cell name">BU</div>
+        <div class="table-cell">Impressions</div>
+        <div class="table-cell">Clicks</div>
+        <div class="table-cell">CTR</div>
+        <div class="table-cell">CPC</div>
+        <div class="table-cell">Spend</div>
+      </div>
+      ${buTableRows}
+    </div>
+  `;
+}
+
+function renderBUView(bu) {
+  const buStats = groupByBU();
+  const buCamps = buStats[bu];
+  const objectives = groupByObjective(buCamps);
+  
+  let html = '';
+  const objectiveOrder = ['ENGAGEMENT', 'VIDEO_VIEW', 'WEBSITE_VISIT'];
+  
+  objectiveOrder.forEach(obj => {
+    if (objectives[obj]) {
+      const objectiveLabels = { "ENGAGEMENT": "Engagement Kampagnen", "VIDEO_VIEW": "Video Kampagnen", "WEBSITE_VISIT": "Website Kampagnen" };
+      html += `<div style="margin-bottom: 20px;"><div style="font-size: 13px; font-weight: 500; margin-bottom: 10px; padding-left: 10px; border-left: 3px solid var(--color-background-info); color: var(--color-text-primary);">${objectiveLabels[obj]}</div>`;
+      
+      objectives[obj].forEach(camp => {
+        html += `<div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+          <div style="font-size: 12px; font-weight: 500; margin-bottom: 8px; color: var(--color-text-primary);">${camp.campaign}</div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 11px; color: var(--color-text-secondary);">
+            <div><strong style="color: var(--color-text-primary);">Impr:</strong> ${formatNumber(camp.impressions)}</div>
+            <div><strong style="color: var(--color-text-primary);">Clicks:</strong> ${formatNumber(camp.clicks)}</div>
+            <div><strong style="color: var(--color-text-primary);">CTR:</strong> ${formatPercent(camp.ctr)}</div>
+            <div><strong style="color: var(--color-text-primary);">CPC:</strong> ${formatEuro(camp.cpc)}</div>
+            <div><strong style="color: var(--color-text-primary);">Eng:</strong> ${formatNumber(camp.engagements)}</div>
+            <div><strong style="color: var(--color-text-primary);">Spend:</strong> ${formatEuro(camp.spend)}</div>
+          </div>
+        </div>`;
+      });
+      
+      html += '</div>';
+    }
+  });
+  
+  return html;
+}
+
+function showView(view) {
+  document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  const content = document.getElementById('content');
+  
+  if (view === 'overview') {
+    content.innerHTML = renderOverview();
+  } else if (view === 'corporate') {
+    content.innerHTML = `<div style="margin-bottom: 20px;"><h3 style="font-size: 16px; font-weight: 500; margin-bottom: 12px; color: var(--color-text-primary);">LANXESS Corporate Kampagnen</h3>${renderBUView('Corporate')}</div>`;
+  } else if (view === 'mpp') {
+    content.innerHTML = `<div style="margin-bottom: 20px;"><h3 style="font-size: 16px; font-weight: 500; margin-bottom: 12px; color: var(--color-text-primary);">Material Protection Products</h3>${renderBUView('MPP')}</div>`;
+  }
+}
+
+const chatMessages = document.getElementById('chatMessages');
+
+function addChatMessage(text, sender, suggested = null) {
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${sender}`;
+  
+  const bubble = document.createElement('div');
+  bubble.className = 'message-bubble';
+  
+  if (suggested) {
+    bubble.innerHTML = text + '<div class="suggested-questions">' + 
+      suggested.map(q => `<button class="suggested-btn" onclick="sendChatMessage('${q.replace(/'/g, "\\'")}')">• ${q}</button>`).join('') + 
+      '</div>';
+  } else {
+    bubble.textContent = text;
+  }
+  
+  messageDiv.appendChild(bubble);
+  chatMessages.appendChild(messageDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function analyzeQuery(query) {
+  const lowerQuery = query.toLowerCase();
+  const buStats = groupByBU();
+  const buCamps = buStats['Corporate'] || [];
+  const mppCamps = buStats['MPP'] || [];
+  
+  const totalSpend = campaigns.reduce((s, c) => s + c.spend, 0);
+  const totalClicks = campaigns.reduce((s, c) => s + c.clicks, 0);
+  const totalImpressions = campaigns.reduce((s, c) => s + c.impressions, 0);
+  
+  let response = '';
+  
+  if (lowerQuery.includes('cpc') || lowerQuery.includes('cost per click') || lowerQuery.includes('click kosten')) {
+    response = `💰 CPC (Cost per Click) erklärt:\n\nDas ist der durchschnittliche Preis, den du für jeden Click zahlst.\n\nFormula: Budget ÷ Clicks = CPC\n\nDurchschnitt: ${formatEuro(totalSpend / totalClicks)}\n\nNiedrige CPC = Effizient\nHohe CPC = Teure Kampagne`;
+    const suggested = ['Welche Kampagne ist am teuersten?', 'Wo könnte ich sparen?'];
+    addChatMessage(response, 'assistant', suggested);
+  } else if (lowerQuery.includes('ctr') || lowerQuery.includes('click through rate')) {
+    response = `📊 CTR (Click-Through-Rate) erklärt:\n\nDas ist der % Anteil von Leuten, die auf deine Anzeige klicken.\n\nFormula: Clicks ÷ Impressions × 100 = CTR%\n\nDurchschnitt hier: ${formatPercent(totalClicks / totalImpressions)}\n\nHöhere CTR = Bessere Anzeige\nNiedrige CTR = Text/Bild verbessern`;
+    const suggested = ['Welche Anzeige hat beste CTR?', 'Budget nach Erfolg?'];
+    addChatMessage(response, 'assistant', suggested);
+  } else if (lowerQuery.includes('impressions') || lowerQuery.includes('reach') || lowerQuery.includes('reichweite')) {
+    response = `👁️ Impressions (Reichweite) erklärt:\n\nDas ist wie oft deine Anzeige angezeigt wurde.\n\nGesamte Impressions: ${formatNumber(totalImpressions)}\n\nMehr Impressions = mehr Menschen sehen deine Anzeige\n\nAber: Impressions allein ist nicht alles - wichtig ist wer klickt!`;
+    const suggested = ['Wie viel Budget für welche Kampagne?', 'Budget Übersicht'];
+    addChatMessage(response, 'assistant', suggested);
+  } else if (lowerQuery.includes('budget') || lowerQuery.includes('geld') || lowerQuery.includes('ausgabe')) {
+    const corporateSpend = buCamps.reduce((s, c) => s + c.spend, 0);
+    const mppSpend = mppCamps.reduce((s, c) => s + c.spend, 0);
+    response = `💵 Budget Übersicht:\n\nGesamt ausgegeben: ${formatEuro(totalSpend)}\n\nCorporate: ${formatEuro(corporateSpend)} (${((corporateSpend/totalSpend)*100).toFixed(0)}%)\nMPP: ${formatEuro(mppSpend)} (${((mppSpend/totalSpend)*100).toFixed(0)}%)\n\nPro Campaign durchschnitt: ${formatEuro(totalSpend / campaigns.length)}`;
+    const suggested = ['Wer spendet am meisten?', 'Beste Kostenkampagne', 'Wo sparen?'];
+    addChatMessage(response, 'assistant', suggested);
+  } else if (lowerQuery.includes('beste') || lowerQuery.includes('erfolgreich') || lowerQuery.includes('top')) {
+    const sorted = campaigns.sort((a, b) => b.ctr - a.ctr);
+    response = `🏆 Top 3 Kampagnen nach Erfolg (CTR):\n\n1️⃣ "${sorted[0].campaign}"\n   CTR: ${formatPercent(sorted[0].ctr)}\n   Spend: ${formatEuro(sorted[0].spend)}\n\n2️⃣ "${sorted[1].campaign}"\n   CTR: ${formatPercent(sorted[1].ctr)}\n   Spend: ${formatEuro(sorted[1].spend)}`;
+    const suggested = ['Warum läuft diese gut?', 'Schlechteste Kampagnen?'];
+    addChatMessage(response, 'assistant', suggested);
+  } else if (lowerQuery.includes('teuer') || lowerQuery.includes('schlechteste')) {
+    const sorted = campaigns.sort((a, b) => b.cpc - a.cpc);
+    response = `❌ Top 3 teuerste Kampagnen (höchster CPC):\n\n1️⃣ "${sorted[0].campaign}"\n   CPC: ${formatEuro(sorted[0].cpc)}\n\n2️⃣ "${sorted[1].campaign}"\n   CPC: ${formatEuro(sorted[1].cpc)}`;
+    const suggested = ['Wo kann ich sparen?', 'Budget umverteilen?'];
+    addChatMessage(response, 'assistant', suggested);
+  } else if (lowerQuery.includes('sparen') || lowerQuery.includes('optimieren')) {
+    const worst = campaigns.sort((a, b) => b.cpc - a.cpc)[0];
+    const best = campaigns.sort((a, b) => b.ctr - a.ctr)[0];
+    response = `💡 Optimierungs-Tipps:\n\n❌ Worst: "${worst.campaign}"\n   CPC: ${formatEuro(worst.cpc)}\n\n✅ Best: "${best.campaign}"\n   CTR: ${formatPercent(best.ctr)}\n\nStrategie: Budget von schlecht zu gut umverteilen!`;
+    const suggested = ['Konkrete Zahlen anpassen?', 'Corporate vs MPP?'];
+    addChatMessage(response, 'assistant', suggested);
+  } else if (lowerQuery.includes('corporate')) {
+    const corporateSpend = buCamps.reduce((s, c) => s + c.spend, 0);
+    const corporateClicks = buCamps.reduce((s, c) => s + c.clicks, 0);
+    const corporateCPC = corporateClicks > 0 ? corporateSpend / corporateClicks : 0;
+    response = `💼 Corporate Performance:\n\nKampagnen: ${buCamps.length}\nSpend: ${formatEuro(corporateSpend)}\nClicks: ${formatNumber(corporateClicks)}\nAvg CPC: ${formatEuro(corporateCPC)}`;
+    const suggested = ['MPP Vergleich?', 'Beste Corporate Kampagne?'];
+    addChatMessage(response, 'assistant', suggested);
+  } else if (lowerQuery.includes('mpp')) {
+    const mppSpend = mppCamps.reduce((s, c) => s + c.spend, 0);
+    const mppClicks = mppCamps.reduce((s, c) => s + c.clicks, 0);
+    const mppCPC = mppClicks > 0 ? mppSpend / mppClicks : 0;
+    response = `🎯 MPP Performance:\n\nKampagnen: ${mppCamps.length}\nSpend: ${formatEuro(mppSpend)}\nClicks: ${formatNumber(mppClicks)}\nAvg CPC: ${formatEuro(mppCPC)}`;
+    const suggested = ['Corporate Vergleich?', 'Welche MPP läuft best?'];
+    addChatMessage(response, 'assistant', suggested);
+  } else {
+    response = `Hallo! Ich kann dir helfen mit:\n\n💰 Budget & Kosten\n📊 KPI Erklärungen\n🎯 Kampagnen Rankings\n💡 Optimierungs-Tipps`;
+    const suggested = ['Was ist CPC?', 'Budget Übersicht', 'Beste Kampagnen', 'Wo kann ich sparen?'];
+    addChatMessage(response, 'assistant', suggested);
+  }
+}
+
+function handleChatKeyPress(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    sendChatMessage();
+  }
+}
+
+function sendChatMessage(suggestedQuestion = null) {
+  const input = document.getElementById('chatInput');
+  const message = suggestedQuestion || input.value.trim();
+  if (!message) return;
+  
+  addChatMessage(message, 'user');
+  input.value = '';
+  
+  setTimeout(() => {
+    analyzeQuery(message);
+  }, 600);
+}
+
+analyzeQuery('start');
+showView('overview');
+</script>
+
+</body>
+</html>
