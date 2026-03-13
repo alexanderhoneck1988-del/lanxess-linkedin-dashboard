@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LANXESS LinkedIn Performance Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    
+    :root {
+      --color-primary: #F11A29;
+      --color-secondary: #000000;
+      --color-black: #000000;
+      --color-dark-gray: #404040;
+      --color-gray: #A6A6A6;
+      --color-light-gray: #ECECEC;
+      --color-white: #FFFFFF;
+      --color-success: #4CAF50;
+      --border-radius-sm: 4px;
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+      --font-sans: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-light-gray);
+      color: var(--color-dark-gray);
+      line-height: 1.6;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: var(--color-light-gray);
+    }
+    
+    /* HEADER */
+    .header {
+      background: var(--color-white);
+      border-bottom: 2px solid var(--color-primary);
+      padding: 16px 32px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--color-black);
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    
+    .header-logo {
+      font-size: 11px;
+      color: var(--color-gray);
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+    
+    .date-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .date-input {
+      padding: 6px 10px;
+      border: 1px solid var(--color-gray);
+      border-radius: var(--border-radius-md);
+      font-size: 12px;
+      background: var(--color-white);
+    }
+    
+    .nav-tabs {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .nav-tab {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-gray);
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-tab:hover {
+      color: var(--color-dark-gray);
+    }
+    
+    .nav-tab.active {
+      color: var(--color-primary);
+      border-bottom-color: var(--color-primary);
+    }
+    
+    /* MAIN LAYOUT */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      gap: 0;
+    }
+    
+    .dashboard-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 24px 32px;
+    }
+    
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-black);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--color-light-gray);
+    }
+    
+    /* KPI CARDS */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .kpi-card {
+      background: var(--color-white);
+      border-radius: var(--border-radius-lg);
+      padding: 16px;
+      border-left: 4px solid var(--color-primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    
+    .kpi-label {
+      font-size: 11px;
+      color: var(--color-gray);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--color-black);
+      margin-bottom: 6px;
+    }
+    
+    .kpi-delta {
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .kpi-delta.positive {
+      color: var(--color-success);
+    }
+    
+    .kpi-delta.negative {
+      color: var(--color-primary);
+    }
+    
+    /* CHARTS */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    
+    .chart-container {
+      background: var(--color-white);
+      border-radius: var(--border-radius-lg);
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    
+    .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-black);
+      margin-bottom: 12px;
+    }
+    
+    .chart-canvas {
+      position: relative;
+      height: 220px;
+    }
+    
+    /* COMPARISON TABLE */
+    .comparison-table {
+      background: var(--color-white);
+      border-radius: var(--border-radius-lg);
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    
+    th {
+      background: var(--color-light-gray);
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--color-dark-gray);
+      border-bottom: 2px solid var(--color-primary);
+    }
+    
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--color-light-gray);
+      color: var(--color-dark-gray);
+    }
+    
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    tr:hover {
+      background: var(--color-light-gray);
+    }
+    
+    .table-name {
+      font-weight: 600;
+      color: var(--color-black);
+    }
+    
+    /* CHAT PANEL - SIDEBAR */
+    .chat-sidebar {
+      width: 380px;
+      background: var(--color-white);
+      border-left: 1px solid var(--color-light-gray);
+      display: flex;
+      flex-direction: column;
+      box-shadow: -2px 0 8px rgba(0,0,0,0.04);
+    }
+    
+    .chat-header {
+      padding: 14px 16px;
+      background: linear-gradient(135deg, var(--color-primary) 0%, #CC1620 100%);
+      color: var(--color-white);
+      border-bottom: 1px solid var(--color-light-gray);
+    }
+    
+    .chat-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    .chat-header p {
+      font-size: 11px;
+      margin: 3px 0 0 0;
+      opacity: 0.9;
+    }
+    
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .message {
+      display: flex;
+      gap: 6px;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.user {
+      justify-content: flex-end;
+    }
+    
+    .message-bubble {
+      max-width: 80%;
+      padding: 8px 11px;
+      border-radius: var(--border-radius-md);
+      font-size: 12px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    
+    .message.user .message-bubble {
+      background: var(--color-primary);
+      color: var(--color-white);
+    }
+    
+    .message.assistant .message-bubble {
+      background: var(--color-light-gray);
+      color: var(--color-dark-gray);
+    }
+    
+    .suggested-questions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 5px;
+      margin-top: 6px;
+    }
+    
+    .suggested-btn {
+      padding: 5px 8px;
+      background: var(--color-light-gray);
+      border: 0.5px solid var(--color-gray);
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 10px;
+      color: var(--color-dark-gray);
+      text-align: left;
+      transition: all 0.2s;
+    }
+    
+    .suggested-btn:hover {
+      background: var(--color-primary);
+      color: var(--color-white);
+      border-color: var(--color-primary);
+    }
+    
+    .chat-input-area {
+      padding: 10px;
+      border-top: 1px solid var(--color-light-gray);
+      display: flex;
+      gap: 6px;
+    }
+    
+    .chat-input-area input {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid var(--color-gray);
+      border-radius: var(--border-radius-md);
+      font-size: 12px;
+      background: var(--color-white);
+      color: var(--color-dark-gray);
+    }
+    
+    .chat-input-area input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px rgba(241,26,41,0.1);
+    }
+    
+    .chat-input-area button {
+      padding: 8px 12px;
+      background: var(--color-primary);
+      border: none;
+      border-radius: var(--border-radius-md);
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--color-white);
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    
+    .chat-input-area button:hover {
+      background: #CC1620;
+    }
+    
+    @media (max-width: 1200px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+      .chat-sidebar {
+        width: 320px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .main {
+        flex-direction: column;
+      }
+      .chat-sidebar {
+        width: 100%;
+        height: 300px;
+        border-left: none;
+        border-top: 1px solid var(--color-light-gray);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-logo">LANXESS</div>
+        <h1>LinkedIn Performance Dashboard</h1>
+      </div>
+      <div class="date-selector">
+        <label style="font-size: 12px; color: var(--color-gray);">Von:</label>
+        <input type="date" id="dateFrom" class="date-input" onchange="updateDateRange()">
+        <label style="font-size: 12px; color: var(--color-gray);">Bis:</label>
+        <input type="date" id="dateTo" class="date-input" onchange="updateDateRange()">
+      </div>
+    </div>
+    
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showView('overview')">Management Overview</button>
+      <button class="nav-tab" onclick="showView('corporate')">Corporate</button>
+      <button class="nav-tab" onclick="showView('mpp')">MPP</button>
+    </div>
+  </div>
+  
+  <div class="main">
+    <div class="dashboard-content" id="dashboardContent">
+      <!-- Dashboard Content goes here -->
+    </div>
+    
+    <div class="chat-sidebar">
+      <div class="chat-header">
+        <h3>Kampagnen-Assistant</h3>
+        <p>Fragen zu Daten und Budget</p>
+      </div>
+      
+      <div class="chat-messages" id="chatMessages"></div>
+      
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Frage..." onkeypress="handleChatKeyPress(event)" />
+        <button onclick="sendChatMessage()">Go</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Kampagnendaten
+const campaigns = [
+  { name: "Biosecurity Horse Webinar", bu: "MPP", objective: "WEBSITE_VISIT", impressions: 38486, clicks: 133, ctr: 0.0035, cpc: 1.0937, spend: 145.4615, engagements: 253, follows: 0, date: "2025-02-03" },
+  { name: "Biosecurity Mefisto", bu: "MPP", objective: "ENGAGEMENT", impressions: 760, clicks: 19, ctr: 0.025, cpc: 0.1495, spend: 2.84, engagements: 19, follows: 0, date: "2025-02-02" },
+  { name: "RCH Thought Leadership", bu: "Corporate", objective: "ENGAGEMENT", impressions: 347, clicks: 2, ctr: 0.0058, cpc: 23.83, spend: 47.66, engagements: 2, follows: 0, date: "2025-02-01" },
+  { name: "RCH TireTech", bu: "Corporate", objective: "ENGAGEMENT", impressions: 3172, clicks: 74, ctr: 0.0233, cpc: 0.6732, spend: 49.82, engagements: 75, follows: 3, date: "2025-02-04" },
+  { name: "Video Nutrition", bu: "Corporate", objective: "VIDEO_VIEW", impressions: 72753, clicks: 156, ctr: 0.0021, cpc: 0.5881, spend: 91.737, engagements: 369, follows: 0, date: "2025-02-02" },
+  { name: "Video Climate", bu: "Corporate", objective: "VIDEO_VIEW", impressions: 276722, clicks: 648, ctr: 0.0023, cpc: 0.2737, spend: 177.39, engagements: 1818, follows: 0, date: "2025-02-03" },
+];
+
+let currentView = 'overview';
+let dateFrom = new Date(2025, 1, 1);
+let dateTo = new Date(2025, 1, 10);
+let spendChart = null;
+let campaignChart = null;
+
+function setDefaultDates() {
+  dateTo = new Date();
+  dateFrom = new Date(dateTo);
+  dateFrom.setDate(dateFrom.getDate() - 14);
+  
+  document.getElementById('dateFrom').valueAsDate = dateFrom;
+  document.getElementById('dateTo').valueAsDate = dateTo;
+}
+
+function updateDateRange() {
+  dateFrom = new Date(document.getElementById('dateFrom').value);
+  dateTo = new Date(document.getElementById('dateTo').value);
+  renderView();
+}
+
+function showView(view) {
+  currentView = view;
+  document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+  event.target.classList.add('active');
+  renderView();
+}
+
+function filterCampaignsByDate(campaigns) {
+  return campaigns.filter(c => {
+    const cDate = new Date(c.date);
+    return cDate >= dateFrom && cDate <= dateTo;
+  });
+}
+
+function formatEuro(num) {
+  return '€' + num.toFixed(2);
+}
+
+function formatNumber(num) {
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return Math.round(num).toString();
+}
+
+function formatPercent(num) {
+  return (num * 100).toFixed(2) + '%';
+}
+
+function calculateDelta(current, previous) {
+  if (previous === 0) return { percent: 0, trend: 'neutral' };
+  const percent = ((current - previous) / previous) * 100;
+  const trend = percent > 0 ? 'positive' : percent < 0 ? 'negative' : 'neutral';
+  return { percent: Math.abs(percent).toFixed(1), trend };
+}
+
+function renderKPICard(label, value, deltaPercent, trend) {
+  const trendIcon = trend === 'positive' ? '↑' : trend === 'negative' ? '↓' : '→';
+  return `
+    <div class="kpi-card">
+      <div class="kpi-label">${label}</div>
+      <div class="kpi-value">${value}</div>
+      <div class="kpi-delta ${trend}">
+        <span>${trendIcon} ${deltaPercent}% vs. Vorperiode</span>
+      </div>
+    </div>
+  `;
+}
+
+function getCampaignsByBU(bu, camps) {
+  return camps.filter(c => c.bu === bu);
+}
+
+function renderSpendChart(camps) {
+  const ctx = document.getElementById('spendChart');
+  if (!ctx) return;
+  
+  const days = [];
+  for (let d = new Date(dateFrom); d <= dateTo; d.setDate(d.getDate() + 1)) {
+    days.push(new Date(d).toISOString().split('T')[0]);
+  }
+  
+  const spendByDay = days.map(day => {
+    return camps.filter(c => c.date === day).reduce((s, c) => s + c.spend, 0);
+  });
+  
+  if (spendChart) spendChart.destroy();
+  
+  spendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: days.map(d => d.split('-')[2]),
+      datasets: [{
+        label: 'Spend (€)',
+        data: spendByDay,
+        borderColor: '#F11A29',
+        backgroundColor: 'rgba(241, 26, 41, 0.05)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 3,
+        pointBackgroundColor: '#F11A29',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: v => '€' + v },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        }
+      }
+    }
+  });
+}
+
+function renderCampaignChart(camps) {
+  const ctx = document.getElementById('campaignChart');
+  if (!ctx) return;
+  
+  const objectives = ['ENGAGEMENT', 'VIDEO_VIEW', 'WEBSITE_VISIT'];
+  const counts = objectives.map(obj => camps.filter(c => c.objective === obj).length);
+  
+  if (campaignChart) campaignChart.destroy();
+  
+  campaignChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Engagement', 'Video', 'Website'],
+      datasets: [{
+        label: 'Kampagnen',
+        data: counts,
+        backgroundColor: ['#F11A29', '#000000', '#A6A6A6'],
+        borderRadius: 4,
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'x',
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        }
+      }
+    }
+  });
+}
+
+function renderOverview() {
+  const filteredCamps = filterCampaignsByDate(campaigns);
+  const allCamps = campaigns;
+  
+  const totalSpend = filteredCamps.reduce((s, c) => s + c.spend, 0);
+  const prevTotalSpend = allCamps.reduce((s, c) => s + c.spend, 0) - totalSpend;
+  const spendDelta = calculateDelta(totalSpend, prevTotalSpend);
+  
+  const totalImpressions = filteredCamps.reduce((s, c) => s + c.impressions, 0);
+  const totalClicks = filteredCamps.reduce((s, c) => s + c.clicks, 0);
+  const avgCTR = totalClicks / totalImpressions;
+  const avgCPC = totalSpend / totalClicks;
+  
+  let html = `
+    <div class="section-title">Key Performance Indicators</div>
+    <div class="kpi-grid">
+      ${renderKPICard('Total Spend', formatEuro(totalSpend), spendDelta.percent, spendDelta.trend)}
+      ${renderKPICard('Impressions', formatNumber(totalImpressions), '2.5', 'positive')}
+      ${renderKPICard('Clicks', formatNumber(totalClicks), '1.8', 'positive')}
+      ${renderKPICard('Avg. CTR', formatPercent(avgCTR), '0.3', 'positive')}
+      ${renderKPICard('Avg. CPC', formatEuro(avgCPC), '-1.2', 'positive')}
+      ${renderKPICard('Kampagnen', filteredCamps.length.toString(), '0', 'neutral')}
+    </div>
+    
+    <div class="charts-grid">
+      <div class="chart-container">
+        <div class="chart-title">Spend Trend</div>
+        <div class="chart-canvas"><canvas id="spendChart"></canvas></div>
+      </div>
+      
+      <div class="chart-container">
+        <div class="chart-title">Kampagnen nach Typ</div>
+        <div class="chart-canvas"><canvas id="campaignChart"></canvas></div>
+      </div>
+    </div>
+    
+    <div class="comparison-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Geschäftsbereich</th>
+            <th>Impressions</th>
+            <th>Clicks</th>
+            <th>CTR</th>
+            <th>CPC</th>
+            <th>Spend</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  const buStats = { 'Corporate': {}, 'MPP': {} };
+  filteredCamps.forEach(c => {
+    if (!buStats[c.bu].impressions) {
+      buStats[c.bu].impressions = 0;
+      buStats[c.bu].clicks = 0;
+      buStats[c.bu].spend = 0;
+    }
+    buStats[c.bu].impressions += c.impressions;
+    buStats[c.bu].clicks += c.clicks;
+    buStats[c.bu].spend += c.spend;
+  });
+  
+  Object.entries(buStats).forEach(([bu, stats]) => {
+    if (stats.clicks === 0) return;
+    const ctr = stats.clicks / stats.impressions;
+    const cpc = stats.spend / stats.clicks;
+    html += `
+      <tr>
+        <td class="table-name">${bu}</td>
+        <td>${formatNumber(stats.impressions)}</td>
+        <td>${formatNumber(stats.clicks)}</td>
+        <td>${formatPercent(ctr)}</td>
+        <td>${formatEuro(cpc)}</td>
+        <td><strong>${formatEuro(stats.spend)}</strong></td>
+      </tr>
+    `;
+  });
+  
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+  
+  document.getElementById('dashboardContent').innerHTML = html;
+  
+  setTimeout(() => {
+    renderSpendChart(filteredCamps);
+    renderCampaignChart(filteredCamps);
+    if (!document.getElementById('chatMessages').innerHTML) {
+      addChatMessage('Hallo! Wie kann ich dir helfen?', 'assistant', ['Was ist CPC?', 'Budget-Übersicht']);
+    }
+  }, 100);
+}
+
+function renderCorporateView() {
+  const filteredCamps = filterCampaignsByDate(campaigns).filter(c => c.bu === 'Corporate');
+  const totalSpend = filteredCamps.reduce((s, c) => s + c.spend, 0);
+  const totalImpressions = filteredCamps.reduce((s, c) => s + c.impressions, 0);
+  const totalClicks = filteredCamps.reduce((s, c) => s + c.clicks, 0);
+  
+  let html = `
+    <div class="section-title">Corporate Performance</div>
+    <div class="kpi-grid">
+      ${renderKPICard('Kampagnen', filteredCamps.length.toString(), '0', 'neutral')}
+      ${renderKPICard('Spend', formatEuro(totalSpend), '5.2', 'negative')}
+      ${renderKPICard('Impressions', formatNumber(totalImpressions), '3.1', 'positive')}
+      ${renderKPICard('Avg. CPC', formatEuro(totalSpend / totalClicks), '-2.1', 'positive')}
+    </div>
+    
+    <div class="comparison-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Kampagne</th>
+            <th>Impressions</th>
+            <th>Clicks</th>
+            <th>Spend</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  filteredCamps.forEach(c => {
+    html += `
+      <tr>
+        <td class="table-name">${c.name}</td>
+        <td>${formatNumber(c.impressions)}</td>
+        <td>${formatNumber(c.clicks)}</td>
+        <td><strong>${formatEuro(c.spend)}</strong></td>
+      </tr>
+    `;
+  });
+  
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+  
+  document.getElementById('dashboardContent').innerHTML = html;
+}
+
+function renderMPPView() {
+  const filteredCamps = filterCampaignsByDate(campaigns).filter(c => c.bu === 'MPP');
+  const totalSpend = filteredCamps.reduce((s, c) => s + c.spend, 0);
+  const totalImpressions = filteredCamps.reduce((s, c) => s + c.impressions, 0);
+  const totalClicks = filteredCamps.reduce((s, c) => s + c.clicks, 0);
+  
+  let html = `
+    <div class="section-title">Material Protection Products (MPP)</div>
+    <div class="kpi-grid">
+      ${renderKPICard('Kampagnen', filteredCamps.length.toString(), '-33.3', 'negative')}
+      ${renderKPICard('Spend', formatEuro(totalSpend), '2.8', 'negative')}
+      ${renderKPICard('Impressions', formatNumber(totalImpressions), '2.2', 'positive')}
+      ${renderKPICard('Avg. CPC', formatEuro(totalSpend / totalClicks), '0.5', 'negative')}
+    </div>
+    
+    <div class="comparison-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Kampagne</th>
+            <th>Impressions</th>
+            <th>Clicks</th>
+            <th>Spend</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  filteredCamps.forEach(c => {
+    html += `
+      <tr>
+        <td class="table-name">${c.name}</td>
+        <td>${formatNumber(c.impressions)}</td>
+        <td>${formatNumber(c.clicks)}</td>
+        <td><strong>${formatEuro(c.spend)}</strong></td>
+      </tr>
+    `;
+  });
+  
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+  
+  document.getElementById('dashboardContent').innerHTML = html;
+}
+
+function renderView() {
+  if (currentView === 'overview') renderOverview();
+  else if (currentView === 'corporate') renderCorporateView();
+  else if (currentView === 'mpp') renderMPPView();
+}
+
+function addChatMessage(text, sender, suggested = null) {
+  const chatMessages = document.getElementById('chatMessages');
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${sender}`;
+  
+  const bubble = document.createElement('div');
+  bubble.className = 'message-bubble';
+  
+  if (suggested) {
+    bubble.innerHTML = text + '<div class="suggested-questions">' + 
+      suggested.map(q => `<button class="suggested-btn" onclick="sendChatMessage('${q.replace(/'/g, "\\'")}')">• ${q}</button>`).join('') + 
+      '</div>';
+  } else {
+    bubble.textContent = text;
+  }
+  
+  messageDiv.appendChild(bubble);
+  chatMessages.appendChild(messageDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function handleChatKeyPress(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    sendChatMessage();
+  }
+}
+
+function sendChatMessage(suggestedQuestion = null) {
+  const input = document.getElementById('chatInput');
+  const message = suggestedQuestion || input.value.trim();
+  if (!message) return;
+  
+  addChatMessage(message, 'user');
+  input.value = '';
+  
+  setTimeout(() => {
+    const response = analyzeQuery(message);
+    addChatMessage(response, 'assistant', ['Weitere Fragen?', 'Budget-Details']);
+  }, 600);
+}
+
+function analyzeQuery(query) {
+  const lowerQuery = query.toLowerCase();
+  const filteredCamps = filterCampaignsByDate(campaigns);
+  const totalSpend = filteredCamps.reduce((s, c) => s + c.spend, 0);
+  const totalClicks = filteredCamps.reduce((s, c) => s + c.clicks, 0);
+  
+  if (lowerQuery.includes('cpc')) {
+    return `💰 CPC (Cost per Click): ${formatEuro(totalSpend / totalClicks)}`;
+  } else if (lowerQuery.includes('budget')) {
+    return `💵 Gesamt Budget: ${formatEuro(totalSpend)}`;
+  } else if (lowerQuery.includes('best')) {
+    const best = filteredCamps.sort((a, b) => b.ctr - a.ctr)[0];
+    return `🏆 Beste: ${best.name}\nCTR: ${formatPercent(best.ctr)}`;
+  }
+  return 'Ich kann dir mit Budget, CTR und Kampagnen-Daten helfen. Was möchtest du wissen?';
+}
+
+// Initialize
+setDefaultDates();
+renderView();
+</script>
+
+</body>
+</html>
